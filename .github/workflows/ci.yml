@@ -34,6 +34,13 @@ jobs:
         with:
           go-version: "1.23.2"
 
+      - name: Install migrate CLI
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.18.1/migrate.linux-amd64.tar.gz -o migrate.tar.gz
+          tar -xzf migrate.tar.gz
+          sudo mv migrate /usr/local/bin/
+          migrate -version
+
       - name: Migrate Postgres DB
         working-directory: ./bank
         run: make migrateup
