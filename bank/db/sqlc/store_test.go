@@ -14,10 +14,11 @@ func TestTxTransfer(t *testing.T) {
 	ac1 := createTestAccount(t)
 	ac2 := createTestAccount(t)
 	fmt.Println(">>>>before", ac1.Balance, ac2.Balance)
-	amt := int64(20)
+	amt := int64(30)
+
 	errs := make(chan error)
 	results := make(chan TransferTxResult)
-	n := 3
+	n := 20
 	for i := 0; i < n; i++ {
 		go func() {
 			txValue := fmt.Sprint("transfer ", i+1)
@@ -38,7 +39,6 @@ func TestTxTransfer(t *testing.T) {
 
 		result := <-results
 		require.NotEmpty(t, result)
-
 		// check transfer
 		transfer := result.transfer
 		require.NotEmpty(t, transfer)
@@ -106,4 +106,47 @@ func TestTxTransfer(t *testing.T) {
 
 	require.Equal(t, ac1.Balance-int64(n)*amt, updatedAccount1.Balance)
 	require.Equal(t, ac2.Balance+int64(n)*amt, updatedAccount2.Balance)
+}
+func TestTxTransferDeadlock(t *testing.T) {
+	store := NewStore(testDb)
+
+	ac1 := createTestAccount(t)
+	ac2 := createTestAccount(t)
+
+	fmt.Println(">>>>before", ac1.Balance, ac2.Balance)
+	amt := int64(30)
+	n := 20
+	errs := make(chan error)
+	for i := 0; i < n; i++ {
+		fromAccount := ac1.ID
+		toAccount := ac2.ID
+		if i%2 == 0 {
+			fromAccount = ac2.ID
+			toAccount = ac1.ID
+		}
+		go func() {
+			txValue := fmt.Sprint("transfer ", i+1)
+			ctx := context.WithValue(context.Background(), txKey, txValue)
+			_, err := store.TransferTx(ctx, TransferTxParams{
+				fromAccountId: fromAccount,
+				toAccountId:   toAccount,
+				amount:        amt,
+			})
+			errs <- err
+		}()
+	}
+	for i := 0; i < n; i++ {
+		err := <-errs
+		require.NoError(t, err)
+	}
+	// check final balance
+	updatedAccount1, err := testQueries.GetAccount(context.Background(), ac1.ID)
+	require.NoError(t, err)
+	updatedAccount2, err := testQueries.GetAccount(context.Background(), ac2.ID)
+	require.NoError(t, err)
+
+	fmt.Println(">>>>after", updatedAccount1.Balance, updatedAccount2.Balance)
+
+	require.Equal(t, ac1.Balance, updatedAccount1.Balance)
+	require.Equal(t, ac2.Balance, updatedAccount2.Balance)
 }
