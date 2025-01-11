@@ -10,7 +10,7 @@ import (
 )
 
 type CreateAccountParams struct {
-	Owner    string `json:"owner" binding:"required"`
+	Owner    int64  `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
