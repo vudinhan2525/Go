@@ -113,7 +113,6 @@ func TestTxTransferDeadlock(t *testing.T) {
 	ac1 := createTestAccount(t)
 	ac2 := createTestAccount(t)
 
-	fmt.Println(">>>>before", ac1.Balance, ac2.Balance)
 	amt := int64(30)
 	n := 20
 	errs := make(chan error)
@@ -125,9 +124,8 @@ func TestTxTransferDeadlock(t *testing.T) {
 			toAccount = ac1.ID
 		}
 		go func() {
-			txValue := fmt.Sprint("transfer ", i+1)
-			ctx := context.WithValue(context.Background(), txKey, txValue)
-			_, err := store.TransferTx(ctx, TransferTxParams{
+
+			_, err := store.TransferTx(context.Background(), TransferTxParams{
 				fromAccountId: fromAccount,
 				toAccountId:   toAccount,
 				amount:        amt,
@@ -144,8 +142,6 @@ func TestTxTransferDeadlock(t *testing.T) {
 	require.NoError(t, err)
 	updatedAccount2, err := testQueries.GetAccount(context.Background(), ac2.ID)
 	require.NoError(t, err)
-
-	fmt.Println(">>>>after", updatedAccount1.Balance, updatedAccount2.Balance)
 
 	require.Equal(t, ac1.Balance, updatedAccount1.Balance)
 	require.Equal(t, ac2.Balance, updatedAccount2.Balance)

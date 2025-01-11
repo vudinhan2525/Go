@@ -30,7 +30,7 @@ func RandomOwner() string {
 	return RandomStr(6)
 }
 func RandomMoney() int64 {
-	return RandomInt(0, 999999999999999999)
+	return RandomInt(0, 200000)
 }
 func RandomCurrency() string {
 	currencies := []string{"VND", "USD", "EUR"}

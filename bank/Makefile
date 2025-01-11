@@ -14,4 +14,6 @@ test:
 	go test -v -cover ./...
 psql:
 	docker exec -it postgresbank psql -U root -d bank
-.PHONY: createdb dropdb postgres migrateup migratedown sqlc test psql
+mockgen:
+	mockgen -package mockdb -destination db/mock/store.go main/db/sqlc Store
+.PHONY: createdb dropdb postgres migrateup migratedown sqlc test psql mockgen

@@ -7,11 +7,11 @@ import (
 )
 
 type Server struct {
-	store  *db.Store
-	router *gin.Engine
+	store  db.Store
+	Router *gin.Engine
 }
 
-func NewServer(store *db.Store) *Server {
+func NewServer(store db.Store) *Server {
 	server := Server{store: store}
 	router := gin.Default()
 	err := router.SetTrustedProxies(nil)
@@ -22,12 +22,12 @@ func NewServer(store *db.Store) *Server {
 	router.GET("/accounts/:id", server.getAccountById)
 	router.GET("/accounts", server.getAccounts)
 
-	server.router = router
+	server.Router = router
 	return &server
 }
 
 func (server *Server) StartServer(address string) error {
-	return server.router.Run(address)
+	return server.Router.Run(address)
 }
 func errorResponse(err error) gin.H {
 	return gin.H{"error": err.Error()}
