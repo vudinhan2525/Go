@@ -5,6 +5,7 @@ import (
 	"log"
 	"main/api"
 	db "main/db/sqlc"
+	"main/pkg/val"
 	"main/util"
 
 	_ "github.com/lib/pq"
@@ -15,6 +16,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error when loading env!!", err)
 	}
+	val.RegisterCustomValidations()
 	conn, err := sql.Open(config.DbDriver, config.DbSource)
 	if err != nil {
 		log.Fatal("Error when connecting to db!!", err)

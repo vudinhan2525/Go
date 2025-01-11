@@ -24,9 +24,9 @@ func TestTxTransfer(t *testing.T) {
 			txValue := fmt.Sprint("transfer ", i+1)
 			ctx := context.WithValue(context.Background(), txKey, txValue)
 			result, err := store.TransferTx(ctx, TransferTxParams{
-				fromAccountId: ac1.ID,
-				toAccountId:   ac2.ID,
-				amount:        amt,
+				FromAccountId: ac1.ID,
+				ToAccountId:   ac2.ID,
+				Amount:        amt,
 			})
 			errs <- err
 			results <- result
@@ -40,7 +40,7 @@ func TestTxTransfer(t *testing.T) {
 		result := <-results
 		require.NotEmpty(t, result)
 		// check transfer
-		transfer := result.transfer
+		transfer := result.Transfer
 		require.NotEmpty(t, transfer)
 		require.Equal(t, ac1.ID, transfer.FromAccountID)
 		require.Equal(t, ac2.ID, transfer.ToAccountID)
@@ -52,7 +52,7 @@ func TestTxTransfer(t *testing.T) {
 		require.NoError(t, err)
 
 		// check entries
-		fromEntry := result.fromEntry
+		fromEntry := result.FromEntry
 		require.NotEmpty(t, fromEntry)
 		require.Equal(t, ac1.ID, fromEntry.AccountID)
 		require.Equal(t, -amt, fromEntry.Amount)
@@ -62,7 +62,7 @@ func TestTxTransfer(t *testing.T) {
 		_, err = store.GetEntry(context.Background(), fromEntry.ID)
 		require.NoError(t, err)
 
-		toEntry := result.toEntry
+		toEntry := result.ToEntry
 		require.NotEmpty(t, toEntry)
 		require.Equal(t, ac2.ID, toEntry.AccountID)
 		require.Equal(t, amt, toEntry.Amount)
@@ -73,11 +73,11 @@ func TestTxTransfer(t *testing.T) {
 		require.NoError(t, err)
 
 		// check accounts
-		fromAccount := result.fromAccount
+		fromAccount := result.FromAccount
 		require.NotEmpty(t, fromAccount)
 		require.Equal(t, ac1.ID, fromAccount.ID)
 
-		toAccount := result.toAccount
+		toAccount := result.ToAccount
 		require.NotEmpty(t, toAccount)
 		require.Equal(t, ac2.ID, toAccount.ID)
 
@@ -126,9 +126,9 @@ func TestTxTransferDeadlock(t *testing.T) {
 		go func() {
 
 			_, err := store.TransferTx(context.Background(), TransferTxParams{
-				fromAccountId: fromAccount,
-				toAccountId:   toAccount,
-				amount:        amt,
+				FromAccountId: fromAccount,
+				ToAccountId:   toAccount,
+				Amount:        amt,
 			})
 			errs <- err
 		}()

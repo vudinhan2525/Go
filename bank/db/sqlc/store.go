@@ -44,16 +44,16 @@ func (store *StoreSQL) execTx(ctx context.Context, fn func(*Queries) error) erro
 }
 
 type TransferTxParams struct {
-	fromAccountId int64 "json:from_account_id"
-	toAccountId   int64 "json:to_account_id"
-	amount        int64 "json:amount"
+	FromAccountId int64 `json:"from_account_id"`
+	ToAccountId   int64 `json:"to_account_id"`
+	Amount        int64 `json:"amount"`
 }
 type TransferTxResult struct {
-	transfer    Transfer
-	fromAccount Account
-	toAccount   Account
-	fromEntry   Entry
-	toEntry     Entry
+	Transfer    Transfer `json:"transfer"`
+	FromAccount Account  `json:"from_account"`
+	ToAccount   Account  `json:"to_account"`
+	FromEntry   Entry    `json:"from_entry"`
+	ToEntry     Entry    `json:"to_entry"`
 }
 
 func (store *StoreSQL) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
@@ -62,58 +62,58 @@ func (store *StoreSQL) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
 
-		result.transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
-			FromAccountID: arg.fromAccountId,
-			ToAccountID:   arg.toAccountId,
-			Amount:        arg.amount,
+		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
+			FromAccountID: arg.FromAccountId,
+			ToAccountID:   arg.ToAccountId,
+			Amount:        arg.Amount,
 		})
 
 		if err != nil {
 			return err
 		}
 
-		result.fromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			Amount:    -arg.amount,
-			AccountID: arg.fromAccountId,
+		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+			Amount:    -arg.Amount,
+			AccountID: arg.FromAccountId,
 		})
 		if err != nil {
 			return err
 		}
 
-		result.toEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			Amount:    arg.amount,
-			AccountID: arg.toAccountId,
+		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+			Amount:    arg.Amount,
+			AccountID: arg.ToAccountId,
 		})
 		if err != nil {
 			return err
 		}
-		if arg.fromAccountId < arg.toAccountId {
-			result.fromAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
-				Amount: -arg.amount,
-				ID:     arg.fromAccountId,
+		if arg.FromAccountId < arg.ToAccountId {
+			result.FromAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
+				Amount: -arg.Amount,
+				ID:     arg.FromAccountId,
 			})
 			if err != nil {
 				return err
 			}
 
-			result.toAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
-				Amount: arg.amount,
-				ID:     arg.toAccountId,
+			result.ToAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
+				Amount: arg.Amount,
+				ID:     arg.ToAccountId,
 			})
 			if err != nil {
 				return err
 			}
 		} else {
-			result.toAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
-				Amount: arg.amount,
-				ID:     arg.toAccountId,
+			result.ToAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
+				Amount: arg.Amount,
+				ID:     arg.ToAccountId,
 			})
 			if err != nil {
 				return err
 			}
-			result.fromAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
-				Amount: -arg.amount,
-				ID:     arg.fromAccountId,
+			result.FromAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
+				Amount: -arg.Amount,
+				ID:     arg.FromAccountId,
 			})
 			if err != nil {
 				return err
