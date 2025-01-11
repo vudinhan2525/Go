@@ -18,6 +18,9 @@ func NewServer(store db.Store) *Server {
 	if err != nil {
 		panic(err)
 	}
+	router.POST("/users", server.createUser)
+	router.GET("/users/:id", server.getUsertById)
+
 	router.POST("/accounts", server.createAccount)
 	router.GET("/accounts/:id", server.getAccountById)
 	router.GET("/accounts", server.getAccounts)
