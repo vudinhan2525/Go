@@ -21,13 +21,12 @@ func (server *Server) createUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	password, err := util.HashPassword(req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	acc, err := server.store.CreateUser(ctx, db.CreateUserParams{
+	user, err := server.store.CreateUser(ctx, db.CreateUserParams{
 		Email:          req.Email,
 		FullName:       req.FullName,
 		HashedPassword: password,
@@ -36,7 +35,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"status": "Create users successfully", "data": acc})
+	ctx.JSON(http.StatusOK, gin.H{"status": "Create users successfully", "data": user})
 }
 
 type GetUserParams struct {
