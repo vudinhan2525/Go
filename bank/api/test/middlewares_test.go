@@ -15,7 +15,7 @@ import (
 
 func addAuthorization(t *testing.T, req *http.Request, userID int64, email string, duration time.Duration, tokenMaker token.Maker, authorizationType string) {
 	userId := fmt.Sprintf("%v", userID)
-	token, err := tokenMaker.CreateToken(userId, email, duration)
+	token, _, err := tokenMaker.CreateToken(userId, email, duration)
 	require.NoError(t, err)
 
 	authorizationHeader := fmt.Sprintf("%s %s", authorizationType, token)

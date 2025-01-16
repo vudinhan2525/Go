@@ -35,6 +35,7 @@ func (server *Server) SetupRouter() {
 	}
 
 	router.POST("/login", server.loginUser)
+	router.POST("/refresh_token", server.refreshToken)
 
 	privateRouter := router.Group("/").Use(middlewares.AuthMiddleware(server.TokenMaker))
 
