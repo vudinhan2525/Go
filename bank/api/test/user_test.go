@@ -7,10 +7,13 @@ import (
 	"io"
 	mockdb "main/db/mock"
 	db "main/db/sqlc"
+	"main/pkg/middlewares"
+	"main/token"
 	"main/util"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -22,6 +25,7 @@ func TestCreateUserAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		body          gin.H
+		setupAuth     func(t *testing.T, req *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
@@ -31,6 +35,9 @@ func TestCreateUserAPI(t *testing.T) {
 				"email":    user.Email,
 				"fullName": user.FullName,
 				"password": password,
+			},
+			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
+				AddTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Times(1).Return(user, nil)
@@ -47,6 +54,9 @@ func TestCreateUserAPI(t *testing.T) {
 				"fullName": user.FullName,
 				"password": "0",
 			},
+			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
+				AddTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Times(0)
 			},
@@ -61,6 +71,9 @@ func TestCreateUserAPI(t *testing.T) {
 				"password": password,
 				"fullName": user.FullName,
 				"email":    user.Email,
+			},
+			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
+				AddTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -90,6 +103,7 @@ func TestCreateUserAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodPost, "/users", bytes.NewReader(data))
 
 			require.NoError(t, err)
+			tc.setupAuth(t, request, server.TokenMaker)
 			server.Router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(t, recorder)

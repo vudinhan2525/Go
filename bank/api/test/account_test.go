@@ -21,7 +21,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func addTokenHeader(t *testing.T, req *http.Request, userID int64, email string, duration time.Duration, tokenMaker token.Maker, authorizationType string) {
+func AddTokenHeader(t *testing.T, req *http.Request, userID int64, email string, duration time.Duration, tokenMaker token.Maker, authorizationType string) {
 	userId := fmt.Sprintf("%v", userID)
 	token, err := tokenMaker.CreateToken(userId, email, duration)
 	require.NoError(t, err)
@@ -43,7 +43,7 @@ func TestGetAccountAPI(t *testing.T) {
 			name:      "Happy Case",
 			accountId: account.ID,
 			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
-				addTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
+				AddTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), account.ID).Times(1).Return(account, nil)
@@ -57,7 +57,7 @@ func TestGetAccountAPI(t *testing.T) {
 			name:      "Bad Request",
 			accountId: 0,
 			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
-				addTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
+				AddTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), 0).Times(0)
@@ -71,7 +71,7 @@ func TestGetAccountAPI(t *testing.T) {
 			name:      "Not Found",
 			accountId: account.ID,
 			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
-				addTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
+				AddTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), account.ID).Times(1).Return(db.Account{}, sql.ErrNoRows)
@@ -84,7 +84,7 @@ func TestGetAccountAPI(t *testing.T) {
 			name:      "Internal Server Error",
 			accountId: account.ID,
 			setupAuth: func(t *testing.T, req *http.Request, tokenMaker token.Maker) {
-				addTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
+				AddTokenHeader(t, req, user.UserID, user.Email, time.Minute, tokenMaker, middlewares.AuthorizationType)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), account.ID).Times(1).Return(db.Account{}, sql.ErrConnDone)
