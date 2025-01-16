@@ -5,6 +5,7 @@ import (
 	db "main/db/sqlc"
 	"main/util"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +27,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	user, err := server.store.CreateUser(ctx, db.CreateUserParams{
+	user, err := server.Store.CreateUser(ctx, db.CreateUserParams{
 		Email:          req.Email,
 		FullName:       req.FullName,
 		HashedPassword: password,
@@ -48,7 +49,7 @@ func (server *Server) getUsertById(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	acc, err := server.store.GetUser(ctx, req.ID)
+	acc, err := server.Store.GetUser(ctx, req.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -58,4 +59,42 @@ func (server *Server) getUsertById(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"status": "Get user successfully", "data": acc})
+}
+
+type LoginUserRequest struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+func (server *Server) loginUser(ctx *gin.Context) {
+	var req LoginUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	user, err := server.Store.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	err = util.VerifyPassword(req.Password, user.HashedPassword)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	token, err := server.TokenMaker.CreateToken(strconv.FormatInt(user.UserID, 10), user.Email, server.Config.TokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "Login successfully", "data": user, "token": token,
+	})
 }

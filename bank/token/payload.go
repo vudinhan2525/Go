@@ -2,6 +2,7 @@ package token
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,7 +15,7 @@ var (
 
 type Payload struct {
 	ID        uuid.UUID `json:"id"`
-	UserID    string    `json:"user_id"`
+	UserID    int       `json:"user_id"`
 	Email     string    `json:"email"`
 	IssuedAt  time.Time `json:"issued_at"`
 	ExpiredAt time.Time `json:"expired_at"`
@@ -25,9 +26,14 @@ func NewPayload(userID, email string, duration time.Duration) (*Payload, error) 
 	if err != nil {
 		return nil, err
 	}
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		panic(err)
+	}
+
 	payload := &Payload{
 		ID:        tokenID,
-		UserID:    userID,
+		UserID:    id,
 		Email:     email,
 		IssuedAt:  time.Now(),
 		ExpiredAt: time.Now().Add(duration),

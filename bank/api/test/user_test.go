@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
-	"main/api"
 	mockdb "main/db/mock"
 	db "main/db/sqlc"
 	"main/util"
@@ -82,7 +81,7 @@ func TestCreateUserAPI(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.buildStubs(store)
-			server := api.NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 			// Marshal body data to JSON
 			data, err := json.Marshal(tc.body)

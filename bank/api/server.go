@@ -1,36 +1,54 @@
 package api
 
 import (
+	"fmt"
 	db "main/db/sqlc"
+	"main/pkg/middlewares"
+	"main/token"
+	"main/util"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
-	store  db.Store
-	Router *gin.Engine
+	Config     util.Config
+	TokenMaker token.Maker
+	Store      db.Store
+	Router     *gin.Engine
 }
 
-func NewServer(store db.Store) *Server {
-	server := Server{store: store}
+func NewServer(config util.Config, store db.Store) (*Server, error) {
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
+	}
+	server := Server{Store: store, TokenMaker: tokenMaker, Config: config}
+	server.SetupRouter()
+
+	return &server, nil
+}
+func (server *Server) SetupRouter() {
 	router := gin.Default()
 	err := router.SetTrustedProxies(nil)
 	if err != nil {
 		panic(err)
 	}
-	router.POST("/users", server.createUser)
-	router.GET("/users/:id", server.getUsertById)
 
-	router.POST("/accounts", server.createAccount)
-	router.GET("/accounts/:id", server.getAccountById)
-	router.GET("/accounts", server.getAccounts)
+	router.POST("/login", server.loginUser)
 
-	router.POST("/transfer", server.transferMoney)
+	privateRouter := router.Group("/").Use(middlewares.AuthMiddleware(server.TokenMaker))
+
+	privateRouter.POST("/users", server.createUser)
+	privateRouter.GET("/users/:id", server.getUsertById)
+
+	privateRouter.POST("/accounts", server.createAccount)
+	privateRouter.GET("/accounts/:id", server.getAccountById)
+	privateRouter.GET("/accounts", server.getAccounts)
+
+	privateRouter.POST("/transfer", server.transferMoney)
 
 	server.Router = router
-	return &server
 }
-
 func (server *Server) StartServer(address string) error {
 	return server.Router.Run(address)
 }
