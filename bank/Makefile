@@ -24,4 +24,6 @@ proto:
 	protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative \
     --go-grpc_out=pb --go-grpc_opt=paths=source_relative \
     proto/*.proto
-.PHONY: createdb dropdb postgres migrateup migrateup1 migratedown migratedown1 sqlc test psql mockgen proto 
+evans: 
+	evans --host 0.0.0.0 --port 5001 -r repl
+.PHONY: createdb dropdb postgres migrateup migrateup1 migratedown migratedown1 sqlc test psql mockgen proto evans
