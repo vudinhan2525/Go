@@ -20,4 +20,8 @@ psql:
 	docker exec -it postgresbank psql -U root -d bank
 mockgen:
 	mockgen -package mockdb -destination db/mock/store.go main/db/sqlc Store
-.PHONY: createdb dropdb postgres migrateup migrateup1 migratedown migratedown1 sqlc test psql mockgen 
+proto:
+	protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative \
+    --go-grpc_out=pb --go-grpc_opt=paths=source_relative \
+    proto/*.proto
+.PHONY: createdb dropdb postgres migrateup migrateup1 migratedown migratedown1 sqlc test psql mockgen proto 

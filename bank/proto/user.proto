@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "main/pb";
+
+message User {
+    int64 user_id = 1;           
+	string hashed_password = 2;
+	string full_name = 3;
+	string email = 4;
+    google.protobuf.Timestamp password_changed_at = 5;
+    google.protobuf.Timestamp created_at = 6;
+};
