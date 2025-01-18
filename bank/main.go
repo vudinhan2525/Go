@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"main/api"
@@ -10,10 +11,13 @@ import (
 	"main/pkg/val"
 	"main/util"
 	"net"
+	"net/http"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func main() {
@@ -27,7 +31,8 @@ func main() {
 		log.Fatal("Error when connecting to db!!", err)
 	}
 	store := db.NewStore(conn)
-	runGrpcServer(config, store)
+	go runGrpcServer(config, store)
+	runGatewayServer(config, store)
 }
 func runHttpServer(config util.Config, store db.Store) {
 	server, err := api.NewServer(config, store)
@@ -53,10 +58,47 @@ func runGrpcServer(config util.Config, store db.Store) {
 	if err != nil {
 		log.Fatal("Error when creating listener")
 	}
-	log.Printf("stat gRPC server at %s", listener.Addr().String())
+	log.Printf("start gRPC server at %s", listener.Addr().String())
 
 	err = grpcServer.Serve(listener)
 	if err != nil {
 		log.Fatal("Cannot creating grpc server")
+	}
+}
+func runGatewayServer(config util.Config, store db.Store) {
+	server, err := gapi.NewServer(config, store)
+	if err != nil {
+		log.Fatal("Error when creating server")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	grpcMux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{
+				UseProtoNames: true,
+			},
+			UnmarshalOptions: protojson.UnmarshalOptions{
+				DiscardUnknown: true,
+			},
+		}))
+
+	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcMux, server)
+	if err != nil {
+		log.Fatal("Error when creating gateway server")
+		return
+	}
+	mux := http.NewServeMux()
+	mux.Handle("/", grpcMux)
+
+	listener, err := net.Listen("tcp", config.APIEndpoint)
+	if err != nil {
+		log.Fatal("Error when creating listener")
+	}
+	log.Printf("start gateway server at %s", listener.Addr().String())
+
+	err = http.Serve(listener, mux)
+	if err != nil {
+		log.Fatal("Cannot creating gateway server")
 	}
 }
