@@ -29,6 +29,7 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 }
 func (server *Server) SetupRouter() {
 	router := gin.Default()
+	router.Use(middlewares.GlobalErrorHandler())
 	err := router.SetTrustedProxies(nil)
 	if err != nil {
 		panic(err)

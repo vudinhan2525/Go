@@ -67,19 +67,19 @@ type LoginUserRequest struct {
 }
 
 func (server *Server) loginUser(ctx *gin.Context) {
+
 	var req LoginUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.Error(util.NewValidationError(err, "invalid request body"))
 		return
 	}
-
 	user, err := server.Store.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			ctx.Error(util.NewNotFoundError(err, "doesn't have user with this email"))
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		ctx.Error(util.NewInternalServerError(err, err.Error()))
 		return
 	}
 

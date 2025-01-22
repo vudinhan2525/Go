@@ -31,8 +31,10 @@ func main() {
 		log.Fatal("Error when connecting to db!!", err)
 	}
 	store := db.NewStore(conn)
-	go runGrpcServer(config, store)
-	runGatewayServer(config, store)
+	// go runGrpcServer(config, store)
+	// runGatewayServer(config, store)
+
+	runHttpServer(config, store)
 }
 func runHttpServer(config util.Config, store db.Store) {
 	server, err := api.NewServer(config, store)
