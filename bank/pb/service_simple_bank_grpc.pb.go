@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	SimpleBank_CreateUser_FullMethodName = "/pb.SimpleBank/CreateUser"
+	SimpleBank_UpdateMe_FullMethodName   = "/pb.SimpleBank/UpdateMe"
 	SimpleBank_LoginUser_FullMethodName  = "/pb.SimpleBank/LoginUser"
 )
 
@@ -28,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SimpleBankClient interface {
 	CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*CreateUserRes, error)
+	UpdateMe(ctx context.Context, in *UpdateUserReq, opts ...grpc.CallOption) (*UpdateUserRes, error)
 	LoginUser(ctx context.Context, in *LoginUserReq, opts ...grpc.CallOption) (*LoginUserRes, error)
 }
 
@@ -49,6 +51,16 @@ func (c *simpleBankClient) CreateUser(ctx context.Context, in *CreateUserReq, op
 	return out, nil
 }
 
+func (c *simpleBankClient) UpdateMe(ctx context.Context, in *UpdateUserReq, opts ...grpc.CallOption) (*UpdateUserRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserRes)
+	err := c.cc.Invoke(ctx, SimpleBank_UpdateMe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *simpleBankClient) LoginUser(ctx context.Context, in *LoginUserReq, opts ...grpc.CallOption) (*LoginUserRes, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LoginUserRes)
@@ -64,6 +76,7 @@ func (c *simpleBankClient) LoginUser(ctx context.Context, in *LoginUserReq, opts
 // for forward compatibility.
 type SimpleBankServer interface {
 	CreateUser(context.Context, *CreateUserReq) (*CreateUserRes, error)
+	UpdateMe(context.Context, *UpdateUserReq) (*UpdateUserRes, error)
 	LoginUser(context.Context, *LoginUserReq) (*LoginUserRes, error)
 	mustEmbedUnimplementedSimpleBankServer()
 }
@@ -77,6 +90,9 @@ type UnimplementedSimpleBankServer struct{}
 
 func (UnimplementedSimpleBankServer) CreateUser(context.Context, *CreateUserReq) (*CreateUserRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
+}
+func (UnimplementedSimpleBankServer) UpdateMe(context.Context, *UpdateUserReq) (*UpdateUserRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateMe not implemented")
 }
 func (UnimplementedSimpleBankServer) LoginUser(context.Context, *LoginUserReq) (*LoginUserRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
@@ -120,6 +136,24 @@ func _SimpleBank_CreateUser_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SimpleBank_UpdateMe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleBankServer).UpdateMe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SimpleBank_UpdateMe_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleBankServer).UpdateMe(ctx, req.(*UpdateUserReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SimpleBank_LoginUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LoginUserReq)
 	if err := dec(in); err != nil {
@@ -148,6 +182,10 @@ var SimpleBank_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateUser",
 			Handler:    _SimpleBank_CreateUser_Handler,
+		},
+		{
+			MethodName: "UpdateMe",
+			Handler:    _SimpleBank_UpdateMe_Handler,
 		},
 		{
 			MethodName: "LoginUser",

@@ -27,5 +27,5 @@ proto:
 	--openapiv2_out doc/swagger --openapiv2_opt=allow_merge=true,merge_file_name=simple_bank \
     proto/*.proto
 evans: 
-	evans --host 0.0.0.0 --port 5001 -r repl
+	evans --host 0.0.0.0 --port 5001 -r repl 
 .PHONY: createdb dropdb postgres migrateup migrateup1 migratedown migratedown1 sqlc test psql mockgen proto evans

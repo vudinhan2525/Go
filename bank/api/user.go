@@ -3,9 +3,12 @@ package api
 import (
 	"database/sql"
 	db "main/db/sqlc"
+	"main/pkg/middlewares"
+	"main/token"
 	"main/util"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -117,5 +120,42 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, gin.H{
 		"status": "Login successfully", "data": user, "access_token": accessToken, "refresh_token": refreshToken,
+	})
+}
+
+type UpdateUserRequest struct {
+	Email    string `json:"email"`
+	FullName string `json:"fullname"`
+	Password string `json:"password"`
+}
+
+func (server *Server) updateUser(ctx *gin.Context) {
+	var req UpdateUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(util.NewValidationError(err, "invalid request body"))
+		return
+	}
+	authPayload := ctx.MustGet(middlewares.AuthorizationPayloadKey).(*token.Payload)
+	params := db.UpdateUserParams{
+		Email:    sql.NullString{String: req.Email, Valid: req.Email != ""},
+		FullName: sql.NullString{String: req.FullName, Valid: req.FullName != ""},
+		UserID:   int64(authPayload.UserID),
+	}
+	if req.Password != "" {
+		hashedPassword, err := util.HashPassword(req.Password)
+		if err != nil {
+			ctx.Error(util.NewInternalServerError(err, "error when hash password"))
+			return
+		}
+		params.HashedPassword = sql.NullString{String: hashedPassword, Valid: hashedPassword != ""}
+		params.PasswordChangedAt = sql.NullTime{Time: time.Now(), Valid: hashedPassword != ""}
+	}
+	user, err := server.Store.UpdateUser(ctx, params)
+	if err != nil {
+		ctx.Error(util.NewInternalServerError(err, "error when update user"))
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "Login successfully", "data": user,
 	})
 }

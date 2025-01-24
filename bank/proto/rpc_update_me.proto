@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package pb;
+
+import "user.proto";
+
+
+option go_package = "main/pb";
+message UpdateUserReq {      
+	optional string email = 1;
+	optional string fullname = 2;
+	optional string password = 3;
+};
+message UpdateUserRes {   
+    string status = 1;   
+	User data = 2;
+};

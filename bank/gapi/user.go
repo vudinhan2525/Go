@@ -5,14 +5,68 @@ import (
 	"database/sql"
 	db "main/db/sqlc"
 	"main/pb"
+	"main/pkg/val"
 	"main/util"
 	"strconv"
+	"time"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+func validateCreateUserRequest(req *pb.CreateUserReq) (violations []*errdetails.BadRequest_FieldViolation) {
+
+	if err := val.ValidatePassword(req.GetPassword()); err != nil {
+		violations = append(violations, fieldViolation("password", err))
+	}
+
+	if err := val.ValidateFullName(req.GetFullname()); err != nil {
+		violations = append(violations, fieldViolation("fullname", err))
+	}
+
+	if err := val.ValidateEmail(req.GetEmail()); err != nil {
+		violations = append(violations, fieldViolation("email", err))
+	}
+
+	return violations
+}
+
+func validateUpdateUserRequest(req *pb.UpdateUserReq) (violations []*errdetails.BadRequest_FieldViolation) {
+
+	if req.GetPassword() != "" {
+		if err := val.ValidatePassword(req.GetPassword()); err != nil {
+			violations = append(violations, fieldViolation("password", err))
+		}
+	}
+	if req.GetFullname() != "" {
+		if err := val.ValidateFullName(req.GetFullname()); err != nil {
+			violations = append(violations, fieldViolation("fullname", err))
+		}
+	}
+	if req.GetEmail() != "" {
+		if err := val.ValidateEmail(req.GetEmail()); err != nil {
+			violations = append(violations, fieldViolation("email", err))
+		}
+	}
+	return violations
+}
+func validateLoginUserRequest(req *pb.LoginUserReq) (violations []*errdetails.BadRequest_FieldViolation) {
+
+	if err := val.ValidatePassword(req.GetPassword()); err != nil {
+		violations = append(violations, fieldViolation("password", err))
+	}
+	if err := val.ValidateEmail(req.GetEmail()); err != nil {
+		violations = append(violations, fieldViolation("email", err))
+	}
+
+	return violations
+}
 func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*pb.CreateUserRes, error) {
+	violations := validateCreateUserRequest(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
 	password, err := util.HashPassword(req.GetPassword())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "password hash failed")
@@ -33,7 +87,10 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*p
 	return res, nil
 }
 func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserReq) (*pb.LoginUserRes, error) {
-
+	violations := validateLoginUserRequest(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
 	user, err := server.Store.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -75,6 +132,37 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserReq) (*pb.
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		Data:         ConvertUser(user),
+	}
+	return res, nil
+}
+func (server *Server) UpdateMe(ctx context.Context, req *pb.UpdateUserReq) (*pb.UpdateUserRes, error) {
+	violations := validateUpdateUserRequest(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
+	params := db.UpdateUserParams{
+		Email:    sql.NullString{String: req.GetEmail(), Valid: req.GetEmail() != ""},
+		FullName: sql.NullString{String: req.GetFullname(), Valid: req.GetFullname() != ""},
+		UserID:   int64(48), // TODO: apply authorization for that
+	}
+	if req.GetPassword() != "" {
+		hashedPassword, err := util.HashPassword(req.GetPassword())
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "password hash failed")
+		}
+		params.HashedPassword = sql.NullString{String: hashedPassword, Valid: hashedPassword != ""}
+		params.PasswordChangedAt = sql.NullTime{Time: time.Now(), Valid: hashedPassword != ""}
+	}
+
+	user, err := server.Store.UpdateUser(ctx, params)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "update user failed %v", err)
+	}
+
+	res := &pb.UpdateUserRes{
+		Status: "Update user successfully",
+		Data:   ConvertUser(user),
 	}
 	return res, nil
 }

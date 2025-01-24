@@ -10,6 +10,7 @@ const (
 	ErrorValidationFailed = "ERROR_01"
 	ErrorNotFound         = "ERROR_02"
 	ErrorInternal         = "ERROR_03" // Add internal error code
+	ErrorBadRequest       = "ERROR_04" // Add internal error code
 )
 
 func HasContextError(ctx *gin.Context) bool {
@@ -54,5 +55,13 @@ func NewInternalServerError(err error, message string) *CustomError {
 		Status:  http.StatusInternalServerError,
 		Message: message,
 		ErrCode: ErrorInternal,
+	}
+}
+func NewBadRequestError(err error, message string) *CustomError {
+	return &CustomError{
+		Err:     err,
+		Status:  http.StatusBadRequest,
+		Message: message,
+		ErrCode: ErrorBadRequest,
 	}
 }

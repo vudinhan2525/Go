@@ -42,6 +42,7 @@ func (server *Server) SetupRouter() {
 
 	privateRouter.POST("/users", server.createUser)
 	privateRouter.GET("/users/:id", server.getUsertById)
+	privateRouter.PUT("/users/update-me", server.updateUser)
 
 	privateRouter.POST("/accounts", server.createAccount)
 	privateRouter.GET("/accounts/:id", server.getAccountById)
