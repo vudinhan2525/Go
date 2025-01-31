@@ -75,6 +75,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*p
 		Email:          req.GetEmail(),
 		FullName:       req.GetFullname(),
 		HashedPassword: password,
+		Role:           db.UserRoleUser,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "create user failed %v", err)
@@ -103,12 +104,12 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserReq) (*pb.
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "password isn't correct %v", err)
 	}
-	accessToken, _, err := server.TokenMaker.CreateToken(strconv.FormatInt(user.UserID, 10), user.Email, server.Config.TokenDuration)
+	accessToken, _, err := server.TokenMaker.CreateToken(strconv.FormatInt(user.UserID, 10), user.Email, user.Role, server.Config.TokenDuration)
 	if err != nil {
 
 		return nil, status.Errorf(codes.Internal, "error when creating access token %v", err)
 	}
-	refreshToken, refreshPayload, err := server.TokenMaker.CreateToken(strconv.FormatInt(user.UserID, 10), user.Email, server.Config.RefreshTokenDuration)
+	refreshToken, refreshPayload, err := server.TokenMaker.CreateToken(strconv.FormatInt(user.UserID, 10), user.Email, user.Role, server.Config.RefreshTokenDuration)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error when creating refresh token %v", err)

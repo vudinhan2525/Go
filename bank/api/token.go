@@ -62,6 +62,7 @@ func (server *Server) refreshToken(ctx *gin.Context) {
 	accessToken, _, err := server.TokenMaker.CreateToken(
 		userId,
 		payload.Email,
+		payload.Role,
 		server.Config.TokenDuration,
 	)
 

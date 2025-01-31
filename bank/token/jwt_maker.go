@@ -3,6 +3,7 @@ package token
 import (
 	"errors"
 	"fmt"
+	db "main/db/sqlc"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -21,8 +22,8 @@ func NewJWTMaker(secretKey string) (Maker, error) {
 	return &JWTMaker{secretKey}, nil
 }
 
-func (maker *JWTMaker) CreateToken(userID, email string, duration time.Duration) (string, *Payload, error) {
-	payload, err := NewPayload(userID, email, duration)
+func (maker *JWTMaker) CreateToken(userID, email string, role db.UserRole, duration time.Duration) (string, *Payload, error) {
+	payload, err := NewPayload(userID, email, role, duration)
 	if err != nil {
 		return "", payload, err
 	}

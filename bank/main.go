@@ -8,6 +8,7 @@ import (
 	db "main/db/sqlc"
 	"main/gapi"
 	"main/pb"
+	"main/pkg/interceptors"
 	"main/pkg/val"
 	"main/util"
 	"net"
@@ -52,7 +53,8 @@ func runGrpcServer(config util.Config, store db.Store) {
 		log.Fatal("Error when creating server")
 	}
 
-	grpcServer := grpc.NewServer()
+	interceptor := interceptors.NewGRPCInterceptor(server.TokenMaker)
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(interceptor.Unary()))
 	pb.RegisterSimpleBankServer(grpcServer, server)
 	reflection.Register(grpcServer)
 
@@ -90,8 +92,10 @@ func runGatewayServer(config util.Config, store db.Store) {
 		log.Fatal("Error when creating gateway server")
 		return
 	}
+	interceptor := interceptors.NewGatewayInterceptor(server.TokenMaker)
+
 	mux := http.NewServeMux()
-	mux.Handle("/", grpcMux)
+	mux.Handle("/", interceptor.GatewayMiddlewares(ctx, grpcMux))
 
 	listener, err := net.Listen("tcp", config.APIEndpoint)
 	if err != nil {

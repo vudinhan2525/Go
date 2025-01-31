@@ -2,6 +2,7 @@ package token
 
 import (
 	"errors"
+	db "main/db/sqlc"
 	"strconv"
 	"time"
 
@@ -14,14 +15,15 @@ var (
 )
 
 type Payload struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    int       `json:"user_id"`
-	Email     string    `json:"email"`
-	IssuedAt  time.Time `json:"issued_at"`
-	ExpiredAt time.Time `json:"expired_at"`
+	ID        uuid.UUID   `json:"id"`
+	UserID    int         `json:"user_id"`
+	Email     string      `json:"email"`
+	Role      db.UserRole `json:"role"`
+	IssuedAt  time.Time   `json:"issued_at"`
+	ExpiredAt time.Time   `json:"expired_at"`
 }
 
-func NewPayload(userID, email string, duration time.Duration) (*Payload, error) {
+func NewPayload(userID, email string, role db.UserRole, duration time.Duration) (*Payload, error) {
 	tokenID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -35,6 +37,7 @@ func NewPayload(userID, email string, duration time.Duration) (*Payload, error) 
 		ID:        tokenID,
 		UserID:    id,
 		Email:     email,
+		Role:      role,
 		IssuedAt:  time.Now(),
 		ExpiredAt: time.Now().Add(duration),
 	}

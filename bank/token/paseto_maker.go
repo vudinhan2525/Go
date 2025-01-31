@@ -2,6 +2,7 @@ package token
 
 import (
 	"fmt"
+	db "main/db/sqlc"
 	"time"
 
 	"golang.org/x/crypto/chacha20poly1305"
@@ -22,8 +23,8 @@ func NewPasetoMaker(symmetricKey string) (Maker, error) {
 	return &PasetoMaker{paseto: paseto.NewV2(), symmetricKey: []byte(symmetricKey)}, nil
 }
 
-func (maker *PasetoMaker) CreateToken(userID, email string, duration time.Duration) (string, *Payload, error) {
-	payload, err := NewPayload(userID, email, duration)
+func (maker *PasetoMaker) CreateToken(userID, email string, role db.UserRole, duration time.Duration) (string, *Payload, error) {
+	payload, err := NewPayload(userID, email, role, duration)
 	if err != nil {
 		return "", payload, err
 	}

@@ -208,6 +208,9 @@
         "email": {
           "type": "string"
         },
+        "role": {
+          "type": "string"
+        },
         "passwordChangedAt": {
           "type": "string",
           "format": "date-time"
