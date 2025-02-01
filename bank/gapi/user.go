@@ -136,16 +136,20 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserReq) (*pb.
 	}
 	return res, nil
 }
+
 func (server *Server) UpdateMe(ctx context.Context, req *pb.UpdateUserReq) (*pb.UpdateUserRes, error) {
 	violations := validateUpdateUserRequest(req)
 	if violations != nil {
 		return nil, invalidArgumentError(violations)
 	}
-
+	payload, err := GetAuthPayload(ctx)
+	if err != nil {
+		return nil, err
+	}
 	params := db.UpdateUserParams{
 		Email:    sql.NullString{String: req.GetEmail(), Valid: req.GetEmail() != ""},
 		FullName: sql.NullString{String: req.GetFullname(), Valid: req.GetFullname() != ""},
-		UserID:   int64(48), // TODO: apply authorization for that
+		UserID:   int64(payload.UserID),
 	}
 	if req.GetPassword() != "" {
 		hashedPassword, err := util.HashPassword(req.GetPassword())
