@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"sort"
@@ -135,13 +136,16 @@ func init() {
 	Logger = logrus.New()
 
 	// Configure lumberjack for log rotation
-	Logger.SetOutput(&lumberjack.Logger{
-		Filename:   "pkg/logger/docland.log",
+	fileLogger := &lumberjack.Logger{
+		Filename:   "pkg/log/docland.log",
 		MaxSize:    10,   // Megabytes
 		MaxBackups: 5,    // Number of backups to keep
 		MaxAge:     30,   // Days
 		Compress:   true, // Compress log files
-	})
+	}
+	// Use io.MultiWriter to log to both file and console
+	multiWriter := io.MultiWriter(os.Stdout, fileLogger)
+	Logger.SetOutput(multiWriter)
 
 	// Use a custom formatter (assuming NewCustomFormatter() is defined elsewhere)
 	customFormatter := NewCustomFormatter()

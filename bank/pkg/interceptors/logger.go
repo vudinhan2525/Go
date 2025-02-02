@@ -3,6 +3,7 @@ package interceptors
 import (
 	"context"
 	"main/pkg/log"
+	"net/http"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -36,5 +37,47 @@ func (authInterceptor *AuthInterceptor) LoggerInterceptor() grpc.UnaryServerInte
 		}
 		return result, err
 	}
+
+}
+
+type ResponseRecoder struct {
+	http.ResponseWriter
+	StatusCode int
+	Body       []byte
+}
+
+func (rec *ResponseRecoder) WriteHeader(statusCode int) {
+	rec.StatusCode = statusCode
+	rec.ResponseWriter.WriteHeader(statusCode)
+}
+func (rec *ResponseRecoder) Write(body []byte) (int, error) {
+	rec.Body = append(rec.Body, body...)
+	return rec.ResponseWriter.Write(body)
+}
+
+func (authInterceptor *AuthInterceptor) LoggerMiddleware(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		startTime := time.Now()
+
+		rec := &ResponseRecoder{
+			ResponseWriter: res,
+			StatusCode:     http.StatusOK,
+		}
+
+		handler.ServeHTTP(rec, req)
+		duration := time.Since(startTime)
+		fields := logrus.Fields{
+			"duration":    duration,
+			"status":      int(rec.StatusCode),
+			"status_text": http.StatusText(rec.StatusCode),
+			"method":      req.Method,
+		}
+		if rec.StatusCode != http.StatusOK {
+			log.Logger.WithFields(fields).Error("http request failed")
+		} else {
+			log.Logger.WithFields(fields).Info("http request processed")
+		}
+
+	})
 
 }

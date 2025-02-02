@@ -53,7 +53,7 @@ func NewGatewayInterceptor(tokenMaker token.Maker) *AuthInterceptor {
 		accessibleRoles: getGatewayRoutes(),
 	}
 }
-func (authInterceptor *AuthInterceptor) GatewayMiddlewares(ctx context.Context, grpcMux *runtime.ServeMux) http.Handler {
+func (authInterceptor *AuthInterceptor) AuthMiddleware(ctx context.Context, grpcMux *runtime.ServeMux) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload, err := authInterceptor.AuthorizeGateway(r)
 		if err != nil {

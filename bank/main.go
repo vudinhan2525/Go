@@ -95,7 +95,9 @@ func runGatewayServer(config util.Config, store db.Store) {
 	interceptor := interceptors.NewGatewayInterceptor(server.TokenMaker)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", interceptor.GatewayMiddlewares(ctx, grpcMux))
+	wrappedHandler := interceptor.LoggerMiddleware(interceptor.AuthMiddleware(ctx, grpcMux))
+
+	mux.Handle("/", wrappedHandler)
 
 	listener, err := net.Listen("tcp", config.APIEndpoint)
 	if err != nil {
