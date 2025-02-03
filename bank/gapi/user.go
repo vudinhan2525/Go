@@ -7,9 +7,11 @@ import (
 	"main/pb"
 	"main/pkg/val"
 	"main/util"
+	"main/worker"
 	"strconv"
 	"time"
 
+	"github.com/hibiken/asynq"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -71,19 +73,36 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*p
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "password hash failed")
 	}
-	user, err := server.Store.CreateUser(ctx, db.CreateUserParams{
+
+	params := db.CreateUserParams{
 		Email:          req.GetEmail(),
 		FullName:       req.GetFullname(),
 		HashedPassword: password,
 		Role:           db.UserRoleUser,
+	}
+	resultTx, err := server.Store.CreateUserTx(ctx, db.CreateUserTxParams{
+		CreateUserParams: params,
+		AfterCreate: func(user db.User) error {
+			opts := []asynq.Option{
+				asynq.MaxRetry(10),
+				asynq.ProcessIn(10 * time.Second),
+			}
+			err = server.TaskDistributor.DistributeTaskSendVerifyEmail(ctx, &worker.PayloadSendVerifyEmail{
+				UserID: user.UserID,
+			}, opts...)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "create user failed %v", err)
+		return nil, status.Errorf(codes.Internal, "create user failed %s", err)
 	}
 
 	res := &pb.CreateUserRes{
 		Status: "Create user successfully",
-		User:   ConvertUser(user),
+		User:   ConvertUser(resultTx.User),
 	}
 	return res, nil
 }

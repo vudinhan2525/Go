@@ -12,6 +12,8 @@ migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose down
 migratedown1:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose down 1
+new_migration:
+	migrate create -ext sql -dir db/migration -seq $(name)
 sqlc:
 	sqlc generate
 test:
@@ -28,4 +30,6 @@ proto:
     proto/*.proto
 evans: 
 	evans --host 0.0.0.0 --port 5001 -r repl 
-.PHONY: createdb dropdb postgres migrateup migrateup1 migratedown migratedown1 sqlc test psql mockgen proto evans
+redis:
+	docker run --name redis -p 6379:6379 -d redis:latest 
+.PHONY: createdb dropdb postgres migrateup migrateup1 migratedown migratedown1 new_migration sqlc test psql mockgen proto evans redis

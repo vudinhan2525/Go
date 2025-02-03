@@ -25,14 +25,12 @@ const (
 func getgRPCRoutes() map[string][]string {
 	const simpleBankServicesPath = "/pb.SimpleBank/"
 	return map[string][]string{
-		simpleBankServicesPath + "UpdateMe":   {"user"},
-		simpleBankServicesPath + "CreateUser": {"admin"},
+		simpleBankServicesPath + "UpdateMe": {"user"},
 	}
 }
 func getGatewayRoutes() map[string][]string {
 	return map[string][]string{
-		"POST /v1/users": {"admin"},
-		"PUT /v1/users":  {"user"},
+		"PUT /v1/users": {"user"},
 	}
 }
 

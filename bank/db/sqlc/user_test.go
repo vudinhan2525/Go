@@ -16,6 +16,7 @@ func createTestUser(t *testing.T) User {
 		HashedPassword: password,
 		FullName:       util.RandomStr(5),
 		Email:          util.RandomEmail(),
+		Role:           "user",
 	}
 	user, err := testQueries.CreateUser(context.Background(), arg)
 	require.NoError(t, err)

@@ -12,6 +12,10 @@ type Config struct {
 	APIEndpoint          string        `mapstructure:"API_ENDPOINT"`
 	GrpcAPIEndpoint      string        `mapstructure:"GRPC_API_ENDPOINT"`
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	RedisAddress         string        `mapstructure:"REDIS_SERVER_ADDRESS"`
+	EmailSenderName      string        `mapstructure:"EMAIL_SENDER_NAME"`
+	EmailSenderAddress   string        `mapstructure:"EMAIL_SENDER_ADDRESS"`
+	EmailSenderPassword  string        `mapstructure:"EMAIL_SENDER_PASSWORD"`
 	TokenDuration        time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 }

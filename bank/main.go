@@ -9,12 +9,15 @@ import (
 	"main/pb"
 	"main/pkg/interceptors"
 	"main/pkg/log"
+	pkg "main/pkg/mail"
 	"main/pkg/val"
 	"main/util"
+	"main/worker"
 	"net"
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/hibiken/asynq"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -32,8 +35,14 @@ func main() {
 		log.Logger.Fatal("Error when connecting to db!!", err)
 	}
 	store := db.NewStore(conn)
-	go runGrpcServer(config, store)
-	runGatewayServer(config, store)
+
+	redisOpt := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
+	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
+	go runGrpcServer(config, store, taskDistributor)
+	go runTaskProcessor(config, redisOpt, store)
+	runGatewayServer(config, store, taskDistributor)
 
 	//runHttpServer(config, store)
 }
@@ -47,8 +56,8 @@ func runHttpServer(config util.Config, store db.Store) {
 		log.Logger.Fatal("Error when starting server")
 	}
 }
-func runGrpcServer(config util.Config, store db.Store) {
-	server, err := gapi.NewServer(config, store)
+func runGrpcServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Logger.Fatal("Error when creating server")
 	}
@@ -69,8 +78,8 @@ func runGrpcServer(config util.Config, store db.Store) {
 		log.Logger.Fatal("Cannot creating grpc server")
 	}
 }
-func runGatewayServer(config util.Config, store db.Store) {
-	server, err := gapi.NewServer(config, store)
+func runGatewayServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Logger.Fatal("Error when creating server")
 	}
@@ -108,5 +117,14 @@ func runGatewayServer(config util.Config, store db.Store) {
 	err = http.Serve(listener, mux)
 	if err != nil {
 		log.Logger.Fatal("Cannot creating gateway server")
+	}
+}
+func runTaskProcessor(config util.Config, redisOpt asynq.RedisClientOpt, store db.Store) {
+	mailer := pkg.NewGmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, mailer)
+	log.Logger.Printf("start task processor")
+	err := taskProcessor.Start()
+	if err != nil {
+		log.Logger.Fatal("error when start task processor")
 	}
 }
